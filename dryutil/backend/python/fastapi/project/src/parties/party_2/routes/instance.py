@@ -51,8 +51,8 @@ def index(_p={}):
         #create = controller_index()  # get inner functions
         #_rsp = create;
         #return  _rsp;
-        _func, _ = await controller_index()   # unpack functions
-        return await _func()       # call create
+        _func, _, __ = await controller_index()   # unpack functions
+        return JSONResponse(content={"success": True, "message": "public test-public OK"}, status_code=200)
     
 
 

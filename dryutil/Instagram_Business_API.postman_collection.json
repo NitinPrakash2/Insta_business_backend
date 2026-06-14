@@ -1,0 +1,441 @@
+{
+  "info": {
+    "name": "Instagram Business Commerce API",
+    "description": "Complete API collection for testing Instagram Business Account integration with catalog sync",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "jwt_token",
+      "value": "YOUR_JWT_TOKEN_HERE",
+      "type": "string"
+    },
+    {
+      "key": "user_id",
+      "value": "seller_nitin_001",
+      "type": "string"
+    },
+    {
+      "key": "utility_id",
+      "value": "705",
+      "type": "string"
+    },
+    {
+      "key": "project_name",
+      "value": "ona",
+      "type": "string"
+    },
+    {
+      "key": "instance_name",
+      "value": "x",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Create Seller Instance",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Nitin Instagram Shop\",\n  \"description\": \"Test Instagram Business Account for product catalog sync\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/client/api/i/{{project_name}}/{{instance_name}}?utility_id={{utility_id}}&action=create",
+          "host": ["{{base_url}}"],
+          "path": ["client", "api", "i", "{{project_name}}", "{{instance_name}}"],
+          "query": [
+            {
+              "key": "utility_id",
+              "value": "{{utility_id}}"
+            },
+            {
+              "key": "action",
+              "value": "create"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "2. Meta OAuth Start",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/client-public/api/i/meta_oauth_start?utility_id={{utility_id}}&user_id={{user_id}}&instance_name={{instance_name}}&project_name={{project_name}}",
+          "host": ["{{base_url}}"],
+          "path": ["client-public", "api", "i", "meta_oauth_start"],
+          "query": [
+            {
+              "key": "utility_id",
+              "value": "{{utility_id}}"
+            },
+            {
+              "key": "user_id",
+              "value": "{{user_id}}"
+            },
+            {
+              "key": "instance_name",
+              "value": "{{instance_name}}"
+            },
+            {
+              "key": "project_name",
+              "value": "{{project_name}}"
+            }
+          ]
+        },
+        "description": "Returns OAuth URL - open it in browser to authorize"
+      },
+      "response": []
+    },
+    {
+      "name": "3. Instagram Validate",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/client/api/i/{{project_name}}/{{instance_name}}?utility_id={{utility_id}}&action=instagram_validate",
+          "host": ["{{base_url}}"],
+          "path": ["client", "api", "i", "{{project_name}}", "{{instance_name}}"],
+          "query": [
+            {
+              "key": "utility_id",
+              "value": "{{utility_id}}"
+            },
+            {
+              "key": "action",
+              "value": "instagram_validate"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "4. Instagram Health",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/client/api/i/{{project_name}}/{{instance_name}}?utility_id={{utility_id}}&action=instagram_health",
+          "host": ["{{base_url}}"],
+          "path": ["client", "api", "i", "{{project_name}}", "{{instance_name}}"],
+          "query": [
+            {
+              "key": "utility_id",
+              "value": "{{utility_id}}"
+            },
+            {
+              "key": "action",
+              "value": "instagram_health"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "5. Full Catalog Sync",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}"
+        },
+        "url": {
+          "raw": "{{base_url}}/client/api/i/{{project_name}}/{{instance_name}}?utility_id={{utility_id}}&action=instagram_catalog_sync_full",
+          "host": ["{{base_url}}"],
+          "path": ["client", "api", "i", "{{project_name}}", "{{instance_name}}"],
+          "query": [
+            {
+              "key": "utility_id",
+              "value": "{{utility_id}}"
+            },
+            {
+              "key": "action",
+              "value": "instagram_catalog_sync_full"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "6. Catalog Details",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/client/api/i/{{project_name}}/{{instance_name}}?utility_id={{utility_id}}&action=instagram_catalog_details",
+          "host": ["{{base_url}}"],
+          "path": ["client", "api", "i", "{{project_name}}", "{{instance_name}}"],
+          "query": [
+            {
+              "key": "utility_id",
+              "value": "{{utility_id}}"
+            },
+            {
+              "key": "action",
+              "value": "instagram_catalog_details"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "7. Sync History",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/client/api/i/{{project_name}}/{{instance_name}}?utility_id={{utility_id}}&action=instagram_sync_history",
+          "host": ["{{base_url}}"],
+          "path": ["client", "api", "i", "{{project_name}}", "{{instance_name}}"],
+          "query": [
+            {
+              "key": "utility_id",
+              "value": "{{utility_id}}"
+            },
+            {
+              "key": "action",
+              "value": "instagram_sync_history"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "8. Sync Errors",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/client/api/i/{{project_name}}/{{instance_name}}?utility_id={{utility_id}}&action=instagram_sync_errors",
+          "host": ["{{base_url}}"],
+          "path": ["client", "api", "i", "{{project_name}}", "{{instance_name}}"],
+          "query": [
+            {
+              "key": "utility_id",
+              "value": "{{utility_id}}"
+            },
+            {
+              "key": "action",
+              "value": "instagram_sync_errors"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "9. Catalog Status",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/client/api/i/{{project_name}}/{{instance_name}}?utility_id={{utility_id}}&action=instagram_catalog_status",
+          "host": ["{{base_url}}"],
+          "path": ["client", "api", "i", "{{project_name}}", "{{instance_name}}"],
+          "query": [
+            {
+              "key": "utility_id",
+              "value": "{{utility_id}}"
+            },
+            {
+              "key": "action",
+              "value": "instagram_catalog_status"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "10. Sync Single Product",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"product_id\": \"prod_789\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/client/api/i/{{project_name}}/{{instance_name}}?utility_id={{utility_id}}&action=instagram_catalog_sync_product",
+          "host": ["{{base_url}}"],
+          "path": ["client", "api", "i", "{{project_name}}", "{{instance_name}}"],
+          "query": [
+            {
+              "key": "utility_id",
+              "value": "{{utility_id}}"
+            },
+            {
+              "key": "action",
+              "value": "instagram_catalog_sync_product"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "11. Read Instance Config",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/client/api/i/{{project_name}}/{{instance_name}}?utility_id={{utility_id}}&action=read",
+          "host": ["{{base_url}}"],
+          "path": ["client", "api", "i", "{{project_name}}", "{{instance_name}}"],
+          "query": [
+            {
+              "key": "utility_id",
+              "value": "{{utility_id}}"
+            },
+            {
+              "key": "action",
+              "value": "read"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "12. Update Instance Config",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Updated Shop Name\",\n  \"description\": \"Updated description\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/client/api/i/{{project_name}}/{{instance_name}}?utility_id={{utility_id}}&action=update",
+          "host": ["{{base_url}}"],
+          "path": ["client", "api", "i", "{{project_name}}", "{{instance_name}}"],
+          "query": [
+            {
+              "key": "utility_id",
+              "value": "{{utility_id}}"
+            },
+            {
+              "key": "action",
+              "value": "update"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "13. Delete Instance",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/client/api/i/{{project_name}}/{{instance_name}}?utility_id={{utility_id}}&action=delete",
+          "host": ["{{base_url}}"],
+          "path": ["client", "api", "i", "{{project_name}}", "{{instance_name}}"],
+          "query": [
+            {
+              "key": "utility_id",
+              "value": "{{utility_id}}"
+            },
+            {
+              "key": "action",
+              "value": "delete"
+            }
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}

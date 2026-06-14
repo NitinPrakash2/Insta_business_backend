@@ -15,6 +15,7 @@ export default async function(server: FastifyInstance) {
     //{ id: , name: ``, description: `` },
     { id: 2, name: `image_proxy`, description: `It can load images from third-party URLs and cache it.` },
     { id: 3, name: `whatsapp_otp`, description: `It can send whatsapp otp` },
+    { id: 705, name: `instagram_business`, description: `Instagram Business Commerce — catalog sync, OAuth, Instagram Shop integration via Meta Graph API` },
     { id: 4, name: `llm_provider`, description: `It can work with Google-Ai-Studio(eg - Gemini API), OpenAI-platform(eg - GPT API) etc` },
 
     { id: 5, name: `code_manager`, description: `It can do update, clone etc task.. on platforms like github` },
