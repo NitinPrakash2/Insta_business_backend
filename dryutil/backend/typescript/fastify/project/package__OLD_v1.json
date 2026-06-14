@@ -1,0 +1,52 @@
+{
+  "name": "project",
+  "version": "1.0.0",
+  "main": "index.js",
+
+  
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "watch": "tsc -w",
+    "dev": "nodemon build/index.js",
+    "start:dev": "concurrently \"tsc -w\" \"nodemon build/index.js\"",
+    "build": "tsc",
+    "start": "ts-node src/index.ts",
+    "typeorm": "typeorm-ts-node-commonjs",
+    "migration": " npm run typeorm migration:run -- -d ./src/data-source.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@fastify/auth": "^5.0.2",
+    "@fastify/autoload": "^6.3.1",
+    "@fastify/cookie": "^11.0.2",
+    "@fastify/cors": "^11.1.0",
+    "@fastify/jwt": "^9.1.0",
+    "@fastify/type-provider-typebox": "^5.2.0",
+    "@sinclair/typebox": "^0.34.38",
+    "@whiskeysockets/baileys": "^6.7.18",
+    "ajv": "^8.17.1",
+    "concurrently": "^9.2.0",
+    "dotenv": "^17.2.1",
+    "exceljs": "^4.4.0",
+    "fastify": "^5.4.0",
+    "fastify-socket.io": "^5.1.0",
+    "mysql2": "^3.14.3",
+    "nodemon": "^3.1.10",
+    "pg": "^8.16.3",
+    "qrcode": "^1.5.4",
+    "reflect-metadata": "^0.2.2",
+    "socket.io": "^4.8.1",
+    "typeorm": "^0.3.25",
+    "typeorm-fastify-plugin": "^3.0.0",
+    "typeorm-seeding": "^1.6.1",
+    "uuid": "^11.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.1.0",
+    "@types/qrcode": "^1.5.5",
+    "typescript": "^5.9.2"
+  }
+}

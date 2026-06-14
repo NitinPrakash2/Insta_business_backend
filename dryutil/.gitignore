@@ -1,0 +1,61 @@
+# deps
+node_modules/
+.pnp
+.pnp.js
+
+# build
+dist/
+out/
+build/
+*.egg-info/
+*.egg
+.eggs/
+
+# python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+.Python
+*.so
+poetry.lock
+pip-log.txt
+pip-delete-this-directory.txt
+
+# env / secrets
+.env
+.env.*
+.env.json
+.myapprc.json
+*.pem
+*.key
+
+# app-specific
+c_a_c_h_e/
+s_e_s_s_i_o_n/
+t_m_p/
+m_o_d_e_l/
+.utility.json
+
+# logs
+*.log
+*.log.*
+logs/
+
+# os
+.DS_Store
+Thumbs.db
+
+# editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# misc
+.eslintcache
+*.tsbuildinfo
+coverage/
+.nyc_output/
