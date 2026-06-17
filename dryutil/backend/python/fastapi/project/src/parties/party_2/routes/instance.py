@@ -1,12 +1,9 @@
 from fastapi import APIRouter, Body, Query, Path, Depends, Request
 from fastapi.responses import JSONResponse, HTMLResponse
-#from my_ai_project.services.model import predict
-#from src.parties.party_2.schema.instance import body
 from src.parties.party_2.controllers.instance import index as controller_index
-#set..
-from src.shared.util.include_file.index import include_file;
+from src.shared.util.include_file.index import include_file
 from src.db_config import get_db
-#from uuid import UUID
+from src.shared.util.jwt_handler.index import JWTHandler
 import uuid
 
 
@@ -53,15 +50,8 @@ def index(_p={}):
         #return  _rsp;
         _func, _, __ = await controller_index()   # unpack functions
         return JSONResponse(content={"success": True, "message": "public test-public OK"}, status_code=200)
-    
-
 
     
- 
-
-
-
-    #============PRIVATE==========# [START]
     #set..
     @router_private.api_route(_ep_prefix_0+'/'+"{project}"+'/'+"{instance}", methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"])
     async def run(

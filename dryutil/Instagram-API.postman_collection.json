@@ -1,0 +1,416 @@
+{
+  "info": {
+    "name": "Instagram Commerce API",
+    "description": "Complete API flow for Instagram Business Account connection and product catalog sync",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "OAuth Flow",
+      "item": [
+        {
+          "name": "1. Start OAuth",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": \"seller_123\",\n  \"redirect_uri\": \"http://localhost:5173/oauth/callback\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8000/client/api/i/ona/instagram?typ=meta_oauth_start",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8000",
+              "path": ["client", "api", "i", "ona", "instagram"],
+              "query": [
+                {
+                  "key": "typ",
+                  "value": "meta_oauth_start"
+                }
+              ]
+            },
+            "description": "Get OAuth authorization URL from Meta"
+          }
+        },
+        {
+          "name": "2. OAuth Callback (After Manual Login)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": \"seller_123\",\n  \"code\": \"YOUR_AUTH_CODE_FROM_CALLBACK\",\n  \"redirect_uri\": \"http://localhost:5173/oauth/callback\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8000/client/api/i/ona/instagram?typ=meta_oauth_callback",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8000",
+              "path": ["client", "api", "i", "ona", "instagram"],
+              "query": [
+                {
+                  "key": "typ",
+                  "value": "meta_oauth_callback"
+                }
+              ]
+            },
+            "description": "Exchange authorization code for access token. Copy 'code' from OAuth callback URL."
+          }
+        },
+        {
+          "name": "3. Check Connection Status",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": \"seller_123\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8000/client/api/i/ona/instagram?typ=meta_connection_status",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8000",
+              "path": ["client", "api", "i", "ona", "instagram"],
+              "query": [
+                {
+                  "key": "typ",
+                  "value": "meta_connection_status"
+                }
+              ]
+            },
+            "description": "Verify Instagram connection and get token expiry info"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Configuration",
+      "item": [
+        {
+          "name": "Get Meta Config",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": \"seller_123\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8000/client/api/i/ona/instagram?typ=get_meta_config",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8000",
+              "path": ["client", "api", "i", "ona", "instagram"],
+              "query": [
+                {
+                  "key": "typ",
+                  "value": "get_meta_config"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Save Meta Config",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": \"seller_123\",\n  \"meta\": {\n    \"instagram_business_account_id\": \"17841400000000001\",\n    \"instagram_username\": \"mystore\",\n    \"fb_page_id\": \"103000000000000001\",\n    \"fb_page_name\": \"My Store Page\",\n    \"catalog_id\": \"123456789000000001\"\n  }\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8000/client/api/i/ona/instagram?typ=save_meta_config",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8000",
+              "path": ["client", "api", "i", "ona", "instagram"],
+              "query": [
+                {
+                  "key": "typ",
+                  "value": "save_meta_config"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Catalog Operations",
+      "item": [
+        {
+          "name": "Catalog Details",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": \"seller_123\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8000/client/api/i/ona/instagram?typ=instagram_catalog_details",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8000",
+              "path": ["client", "api", "i", "ona", "instagram"],
+              "query": [
+                {
+                  "key": "typ",
+                  "value": "instagram_catalog_details"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Catalog Status",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": \"seller_123\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8000/client/api/i/ona/instagram?typ=instagram_catalog_status",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8000",
+              "path": ["client", "api", "i", "ona", "instagram"],
+              "query": [
+                {
+                  "key": "typ",
+                  "value": "instagram_catalog_status"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Product Sync",
+      "item": [
+        {
+          "name": "Full Catalog Sync",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": \"seller_123\",\n  \"trigger\": \"manual\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8000/client/api/i/ona/instagram?typ=instagram_catalog_sync_full",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8000",
+              "path": ["client", "api", "i", "ona", "instagram"],
+              "query": [
+                {
+                  "key": "typ",
+                  "value": "instagram_catalog_sync_full"
+                }
+              ]
+            },
+            "description": "Sync all products from product directory to Instagram catalog"
+          }
+        },
+        {
+          "name": "Sync Single Product",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": \"seller_123\",\n  \"product\": {\n    \"id\": \"prod_123\",\n    \"title\": \"Awesome T-Shirt\",\n    \"description\": \"High quality cotton t-shirt\",\n    \"price\": 499,\n    \"currency\": \"INR\",\n    \"image_url\": \"https://example.com/image.jpg\",\n    \"url\": \"https://example.com/product/123\"\n  }\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8000/client/api/i/ona/instagram?typ=instagram_catalog_sync_product",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8000",
+              "path": ["client", "api", "i", "ona", "instagram"],
+              "query": [
+                {
+                  "key": "typ",
+                  "value": "instagram_catalog_sync_product"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Sync History",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": \"seller_123\",\n  \"limit\": 20,\n  \"offset\": 0\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8000/client/api/i/ona/instagram?typ=instagram_sync_history",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8000",
+              "path": ["client", "api", "i", "ona", "instagram"],
+              "query": [
+                {
+                  "key": "typ",
+                  "value": "instagram_sync_history"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Sync Errors",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": \"seller_123\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8000/client/api/i/ona/instagram?typ=instagram_sync_errors",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8000",
+              "path": ["client", "api", "i", "ona", "instagram"],
+              "query": [
+                {
+                  "key": "typ",
+                  "value": "instagram_sync_errors"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Validation & Health",
+      "item": [
+        {
+          "name": "Instagram Validate",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": \"seller_123\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8000/client/api/i/ona/instagram?typ=instagram_validate",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8000",
+              "path": ["client", "api", "i", "ona", "instagram"],
+              "query": [
+                {
+                  "key": "typ",
+                  "value": "instagram_validate"
+                }
+              ]
+            },
+            "description": "Full validation of all connected assets"
+          }
+        },
+        {
+          "name": "Instagram Health",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": \"seller_123\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8000/client/api/i/ona/instagram?typ=instagram_health",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8000",
+              "path": ["client", "api", "i", "ona", "instagram"],
+              "query": [
+                {
+                  "key": "typ",
+                  "value": "instagram_health"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

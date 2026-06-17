@@ -1,192 +1,114 @@
-# 🚀 Quick Start - Instagram Business API Testing
+# ✅ Instagram Commerce - Quick Start Checklist
 
-## Prerequisites ✅
-- ✅ Instagram Business Account ready
-- ✅ Facebook Page "Nitin Test" linked
-- ✅ Server running on http://localhost:8000
-- ✅ PostgreSQL database connected
+## Pre-Launch Checklist (Admin)
+
+- [ ] Create Meta App at https://developers.facebook.com/apps
+- [ ] Copy App ID and App Secret
+- [ ] Add valid OAuth Redirect URIs in Meta App settings
+- [ ] Request all required permissions (see setup guide)
+- [ ] Wait for Meta approval
+- [ ] Run SQL setup script with credentials
+- [ ] Verify database config: `SELECT data->'config' FROM instance WHERE name = 'default';`
+- [ ] Test backend endpoint is accessible: `curl http://localhost:8000/client/api/i/ona/instagram?typ=meta_oauth_start`
+- [ ] Ensure `/public/oauth/callback/index.html` exists on frontend
+- [ ] Add InstagramConnect.vue component to router
+- [ ] Test frontend route: `http://localhost:5173/instagram-connect`
+
+## Seller Launch Day
+
+### 1️⃣ Setup (5 minutes)
+```
+Go to: http://localhost:5173/instagram-connect
+Click: [Connect Instagram]
+```
+
+### 2️⃣ Login (2 minutes)
+```
+1. Facebook login dialog appears
+2. Log in with Instagram Business account
+3. Grant permissions
+```
+
+### 3️⃣ Auto-Discovery (30 seconds)
+```
+Backend discovers:
+✅ Instagram Accounts
+✅ Facebook Pages  
+✅ Product Catalogs
+✅ Auto-creates catalog if needed
+```
+
+### 4️⃣ Selection & Sync (2 minutes)
+```
+1. Select Instagram account (auto-selected if only one)
+2. Select catalog (auto-selected if only one)
+3. Click [Save & Sync Products]
+4. Wait for sync to complete
+```
+
+### 5️⃣ Done! ✅
+```
+✅ Products live on Instagram Shop
+✅ Can view sync status anytime
+✅ Can re-sync on demand
+```
+
+**Total Time: ~10 minutes**
 
 ---
 
-## Step 1: Create Database Table (ONE TIME ONLY)
+## Troubleshooting Quick Reference
 
-Open PostgreSQL and run:
-
-```sql
-CREATE TABLE IF NOT EXISTS instagram_business (
-    id SERIAL PRIMARY KEY,
-    user_id VARCHAR NOT NULL,
-    data JSONB NOT NULL DEFAULT '{}',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE INDEX idx_instagram_business_user_id ON instagram_business(user_id);
-```
-
-Or use command line:
-```bash
-psql -U postgres -d dryutil -c "CREATE TABLE IF NOT EXISTS instagram_business (id SERIAL PRIMARY KEY, user_id VARCHAR NOT NULL, data JSONB NOT NULL DEFAULT '{}', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP); CREATE INDEX idx_instagram_business_user_id ON instagram_business(user_id);"
-```
+| Error | Fix |
+|-------|-----|
+| "meta_app_id not configured" | Run SQL setup script |
+| "Invalid authorization code" | Clear cookies, try again |
+| "Instagram account not found" | Verify Business Manager access |
+| "Products not syncing" | Check product_dir_token, view sync errors |
+| OAuth callback blank | Check console errors, verify backend accessible |
 
 ---
 
-## Step 2: Generate JWT Token
+## Testing Without Frontend
 
-```bash
-cd c:\Users\nitin\Desktop\Instagram\Insta_business_backend\dryutil\backend\python\fastapi\project
-poetry run python generate_token.py
-```
+Use Postman Collection: `Instagram-API.postman_collection.json`
 
-**Copy the token** that appears after "Bearer" - you'll use it in all API calls.
-
----
-
-## Step 3: Test APIs Using Postman (RECOMMENDED)
-
-### Import Collection:
-1. Open Postman
-2. Click "Import"
-3. Select file: `Instagram_Business_API.postman_collection.json`
-4. Collection will be imported with all 13 endpoints
-
-### Configure Variables:
-1. Click on the collection name
-2. Go to "Variables" tab
-3. Update `jwt_token` with your generated token
-4. Save
-
-### Run Tests in Order:
-1. ✅ Create Seller Instance
-2. ✅ Meta OAuth Start (copy oauth_url from response, open in browser)
-3. ✅ Instagram Validate (after OAuth completes)
-4. ✅ Instagram Health
-5. ✅ Full Catalog Sync
-6. ✅ Catalog Details
-7. ✅ Sync History
+Steps:
+1. Import collection into Postman
+2. Set user_id variable
+3. Run requests in order:
+   - Start OAuth
+   - OAuth Callback (manual)
+   - Check Status
+   - Get Config
+   - Start Sync
+   - View History
 
 ---
 
-## Step 4: Test APIs Using cURL (ALTERNATIVE)
+## Production Deployment
 
-### 1. Generate Token:
-```bash
-poetry run python generate_token.py
-```
-
-Save the token as: `YOUR_TOKEN_HERE`
-
-### 2. Create Seller:
-```bash
-curl -X POST "http://localhost:8000/client/api/i/ona/x?utility_id=705&action=create" ^
-  -H "Content-Type: application/json" ^
-  -H "Authorization: Bearer YOUR_TOKEN_HERE" ^
-  -d "{\"name\":\"Nitin Instagram Shop\",\"description\":\"Test shop\"}"
-```
-
-### 3. Start OAuth:
-```bash
-curl "http://localhost:8000/client-public/api/i/meta_oauth_start?utility_id=705&user_id=seller_nitin_001&instance_name=x&project_name=ona"
-```
-
-**Open the returned `oauth_url` in your browser** and approve permissions.
-
-### 4. Validate Connection:
-```bash
-curl "http://localhost:8000/client/api/i/ona/x?utility_id=705&action=instagram_validate" ^
-  -H "Authorization: Bearer YOUR_TOKEN_HERE"
-```
-
-### 5. Sync Full Catalog:
-```bash
-curl -X POST "http://localhost:8000/client/api/i/ona/x?utility_id=705&action=instagram_catalog_sync_full" ^
-  -H "Content-Type: application/json" ^
-  -H "Authorization: Bearer YOUR_TOKEN_HERE" ^
-  -d "{}"
-```
-
-### 6. Check Catalog Details:
-```bash
-curl "http://localhost:8000/client/api/i/ona/x?utility_id=705&action=instagram_catalog_details" ^
-  -H "Authorization: Bearer YOUR_TOKEN_HERE"
-```
+- [ ] Update Meta App OAuth URIs to production domain
+- [ ] Update database oauth_redirect_uri to production
+- [ ] Enable HTTPS
+- [ ] Set `NODE_ENV=production` in backend
+- [ ] Configure database backups
+- [ ] Monitor sync errors via logs
+- [ ] Set up alerts for sync failures
 
 ---
 
-## Expected Flow:
+## Support
 
-```
-1. Create Seller → 200 OK
-   ↓
-2. OAuth Start → Returns oauth_url
-   ↓
-3. [Browser] Approve permissions → Auto redirects to callback
-   ↓
-4. Validate → Returns Instagram account details
-   ↓
-5. Full Sync → Syncs all products
-   ↓
-6. Catalog Details → Shows synced products
-```
+**Common Issues:**
+- See INSTAGRAM_SETUP_GUIDE.md
+- Check backend logs: `tail -f /var/log/instagram_business/app.log`
+- Query database for errors: See `setup-instagram.sql` troubleshooting queries
+
+**API Documentation:**
+- Endpoint reference in INSTAGRAM_SETUP_GUIDE.md
+- Full code docs in `index.py` (700+ lines, well-commented)
 
 ---
 
-## Troubleshooting:
-
-### ❌ 400 Bad Request - "Instance not found"
-**Fix**: Run Step 3.1 (Create Seller) first
-
-### ❌ 401 Unauthorized
-**Fix**: Generate new token using `poetry run python generate_token.py`
-
-### ❌ 404 Not Found on OAuth
-**Fix**: Check if server is running and OAuth routes are registered
-
-### ❌ "No Instagram configuration found"
-**Fix**: Complete OAuth flow (open oauth_url in browser)
-
-### ❌ Products not syncing
-**Fix**: Check if OMS has products, verify catalog_id in database
-
----
-
-## Verify in Database:
-
-### Check instance:
-```sql
-SELECT * FROM instance WHERE utility_id = 705;
-```
-
-### Check Instagram config:
-```sql
-SELECT user_id, data->>'instagram_username' as username, 
-       data->'config'->'meta'->>'catalog_id' as catalog_id
-FROM instagram_business;
-```
-
-### Check sync logs:
-```sql
-SELECT * FROM catalog_sync_history ORDER BY created_at DESC LIMIT 5;
-```
-
----
-
-## 📚 Full Documentation:
-
-- **Complete Guide**: `INSTAGRAM_API_TESTING_GUIDE.md`
-- **Health Report**: `API_HEALTH_REPORT.md`
-- **Postman Collection**: `Instagram_Business_API.postman_collection.json`
-
----
-
-## 🎯 Success Checklist:
-
-- [ ] Database table created
-- [ ] JWT token generated
-- [ ] Seller instance created (200 OK)
-- [ ] OAuth completed (browser redirect successful)
-- [ ] Validation shows Instagram username
-- [ ] Catalog sync runs successfully
-- [ ] Products visible in catalog details
-
-Once all ✅, your Instagram Business Commerce integration is LIVE! 🎉
+**Ready? Start at Phase 1 of INSTAGRAM_SETUP_GUIDE.md → then use this checklist!**

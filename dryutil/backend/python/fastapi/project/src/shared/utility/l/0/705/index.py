@@ -8,8 +8,109 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.future import select
 import uuid
 import httpx
+import re
+import os
+import logging
+import json as _json
 from datetime import datetime, timezone, timedelta
+from collections import defaultdict
+from logging.handlers import RotatingFileHandler
 from src.shared.utility.u.fake_req_obj.index import fake_req_obj
+from src.shared.util.jwt_handler.index import JWTHandler
+
+
+# ── Logging ────────────────────────────────────────────────────────────────
+
+_log = logging.getLogger("utility_705")
+if not _log.handlers:
+    _log.setLevel(getattr(logging, os.getenv('LOG_LEVEL', 'INFO').upper(), logging.INFO))
+    _h = logging.StreamHandler()
+    _h.setFormatter(logging.Formatter('{"time": "%(asctime)s", "level": "%(levelname)s", "msg": "%(message)s"}'))
+    _log.addHandler(_h)
+    if os.getenv('NODE_ENV') == 'production':
+        import sys
+        from pathlib import Path
+        _lf = os.getenv('LOG_FILE_PATH', '/var/log/instagram_business/app.log')
+        Path(_lf).parent.mkdir(parents=True, exist_ok=True)
+        _fh = RotatingFileHandler(_lf, maxBytes=10*1024*1024, backupCount=10)
+        _fh.setFormatter(_h.formatter)
+        _log.addHandler(_fh)
+
+
+# ── Rate Limiter ───────────────────────────────────────────────────────────
+
+_rate_store: dict = defaultdict(list)
+_rate_limit  = int(os.getenv('RATE_LIMIT_PER_MINUTE', '60'))
+_rate_enabled = os.getenv('ENABLE_RATE_LIMITING', 'false').lower() == 'true'
+
+def _rate_check(identifier: str) -> bool:
+    if not _rate_enabled:
+        return True
+    now    = datetime.now()
+    cutoff = now - timedelta(seconds=60)
+    _rate_store[identifier] = [t for t in _rate_store[identifier] if t > cutoff]
+    if len(_rate_store[identifier]) >= _rate_limit:
+        return False
+    _rate_store[identifier].append(now)
+    return True
+
+def _rate_id(request: Request) -> str:
+    auth = request.headers.get('Authorization', '')
+    if auth.startswith('Bearer '):
+        return auth[7:50]
+    fwd = request.headers.get('X-Forwarded-For')
+    if fwd:
+        return fwd.split(',')[0].strip()
+    return request.client.host if request.client else 'unknown'
+
+
+# ── Input Validator ────────────────────────────────────────────────────────
+
+def _validate_user_id(user_id: str) -> str:
+    if not user_id or not isinstance(user_id, str) or len(user_id) > 255:
+        raise Exception("invalid user_id")
+    return user_id
+
+def _sanitize(text: str, max_len: int = 1000) -> str:
+    if not text:
+        return ""
+    return str(text).strip().replace('\x00', '')[:max_len]
+
+def _validate_pagination(limit, offset) -> tuple:
+    try:
+        limit, offset = max(1, min(int(limit or 20), 100)), max(0, int(offset or 0))
+    except Exception:
+        raise Exception("invalid pagination params")
+    return limit, offset
+
+
+# ── Token Manager ──────────────────────────────────────────────────────────
+
+def _create_access_token(user_id: str, name: str = "") -> str:
+    expire_minutes = int(os.getenv('JWT_EXPIRE_MINUTES', '1440'))
+    return JWTHandler.create_token(
+        {"sub": user_id, "name": name, "security": {"party": ["party_2"]}, "token_type": "access"},
+        expire_minutes=expire_minutes
+    )
+
+def _create_refresh_token(user_id: str) -> str:
+    expire_days = int(os.getenv('JWT_REFRESH_EXPIRE_DAYS', '30'))
+    return JWTHandler.create_token(
+        {"sub": user_id, "token_type": "refresh", "security": {"party": ["party_2"]}},
+        expire_minutes=expire_days * 24 * 60
+    )
+
+def _refresh_jwt_if_needed(token: str) -> dict:
+    """Return new access token if current one expires within 10 min."""
+    try:
+        payload = JWTHandler.verify_token(token)
+        exp     = payload.get('exp', 0)
+        if exp and (exp - datetime.now(timezone.utc).timestamp()) <= 600:
+            new_token = _create_access_token(payload.get('sub', ''), payload.get('name', ''))
+            return {"refreshed": True, "access_token": new_token}
+    except Exception:
+        pass
+    return {"refreshed": False}
 
 
 Base = declarative_base()
@@ -67,6 +168,13 @@ async def index(_p={'data': {'instance': Any}}):
             _engine = create_async_engine(database_url, echo=False, future=True)
             async with _engine.begin() as conn:
                 await conn.run_sync(Base.metadata.create_all)
+                # Create indexes on first run
+                await conn.execute(sa_func.text("CREATE INDEX IF NOT EXISTS idx_instagram_business_user_id ON instagram_business(user_id)"))
+                await conn.execute(sa_func.text("CREATE INDEX IF NOT EXISTS idx_catalog_sync_history_business_id ON catalog_sync_history(business_id)"))
+                await conn.execute(sa_func.text("CREATE INDEX IF NOT EXISTS idx_catalog_sync_history_status ON catalog_sync_history(status)"))
+                await conn.execute(sa_func.text("CREATE INDEX IF NOT EXISTS idx_catalog_sync_log_sync_id ON catalog_sync_log(sync_id)"))
+                await conn.execute(sa_func.text("CREATE INDEX IF NOT EXISTS idx_catalog_sync_log_business_id ON catalog_sync_log(business_id)"))
+                await conn.execute(sa_func.text("CREATE INDEX IF NOT EXISTS idx_catalog_sync_log_status ON catalog_sync_log(status)"))
 
     # ── Tiny helpers ───────────────────────────────────────────────────────
 
@@ -78,15 +186,52 @@ async def index(_p={'data': {'instance': Any}}):
         return d.get('config', {}).get('meta', {})
 
     async def _get_row(db, body):
-        if 'id' in body:
+        """Find seller row by id or user_id. Auto-creates if not found."""
+        if 'id' in body and body['id']:
             result = await db.execute(
                 select(InstagramBusiness).where(InstagramBusiness.id == uuid.UUID(body['id']))
             )
             return result.scalar_one_or_none()
+        user_id = body.get('user_id', '')
+        if not user_id:
+            return None
         result = await db.execute(
-            select(InstagramBusiness).where(InstagramBusiness.user_id == body['user_id'])
+            select(InstagramBusiness).where(InstagramBusiness.user_id == user_id)
         )
-        return result.scalars().first()
+        row = result.scalars().first()
+        # Auto-create row on first visit — seller never needs to call 'create' manually
+        if not row:
+            instance_cfg = {}
+            if _p['data'].get('instance') is not None:
+                _inst_data = _p['data']['instance'].data or {}
+                instance_cfg = _inst_data.get('config', {})
+            row = InstagramBusiness(
+                user_id=user_id,
+                data={
+                    'config': {
+                        'database':          instance_cfg.get('database', {}),
+                        'product_dir_token': instance_cfg.get('product_dir_token', ''),
+                        'base_url':          instance_cfg.get('base_url', 'http://localhost:8000'),
+                        'meta_app_id':       instance_cfg.get('meta_app_id', ''),
+                        'meta_app_secret':   instance_cfg.get('meta_app_secret', ''),
+                        'oauth_redirect_uri':instance_cfg.get('oauth_redirect_uri', ''),
+                        'meta': {
+                            'access_token': '',
+                            'instagram_business_account_id': '',
+                            'instagram_username': '',
+                            'fb_page_id': '',
+                            'fb_page_name': '',
+                            'catalog_id': '',
+                        }
+                    },
+                    'profile': {'title': ''}
+                }
+            )
+            db.add(row)
+            await db.commit()
+            await db.refresh(row)
+            _log.info(f"[705] auto-created instagram_business row for user_id={user_id}")
+        return row
 
     async def _get_first_business_row(db):
         result = await db.execute(select(InstagramBusiness).limit(1))
@@ -320,15 +465,24 @@ async def index(_p={'data': {'instance': Any}}):
     async def i(request: Request):
         try:
             if _engine is None:
-                raise Exception("database engine not configured — set instance data.config.database.url")
-            body = await request.json()
-            typ  = request.query_params.get('typ')
+                raise Exception("database engine not configured")
 
+            # rate limiting
+            if not _rate_check(_rate_id(request)):
+                return JSONResponse(content={"success": False, "message": "Rate limit exceeded"}, status_code=429)
+
+            try:
+                body = await request.json()
+            except Exception as je:
+                _log.error(f"Failed to parse request body: {je}")
+                raise Exception(f"Invalid JSON body: {je}")
+            
+            typ  = request.query_params.get('typ')
+            _log.info(f"[705] typ={typ} user={body.get('user_id', '-')}")
+            
             async with AsyncSession(_engine) as db:
                 match typ:
-
                     # ── CRUD ───────────────────────────────────────────────
-
                     case 'create':
                         row = InstagramBusiness(user_id=body['user_id'], data=body.get('data', {}))
                         db.add(row)
@@ -428,26 +582,26 @@ async def index(_p={'data': {'instance': Any}}):
                     # ── OAuth flow (reused architecture) ───────────────────
 
                     case 'meta_oauth_start':
+                        if _engine is None:
+                            return JSONResponse(content={"success": False, "message": "Database engine not configured", "data": {}}, status_code=400)
                         row = await _get_row(db, body)
                         if not row:
                             raise Exception("record not found")
                         d   = row.data or {}
                         cfg = d.get('config', {})
-                        app_id       = cfg.get('meta_app_id', '')
+                        app_id       = cfg.get('meta_app_id', '') or os.getenv('META_APP_ID', '')
                         redirect_uri = body.get('redirect_uri', cfg.get('oauth_redirect_uri', ''))
                         state        = body.get('state', str(row.id))
                         if not app_id:
-                            raise Exception("meta_app_id not configured in instance config")
+                            return JSONResponse(content={"success": False, "message": "META_APP_ID not configured. Set META_APP_ID environment variable or pass meta_app_id in config.", "data": {}}, status_code=400)
                         if not redirect_uri:
-                            raise Exception("redirect_uri required")
-                        # Instagram Business scopes — no WhatsApp scopes
+                            redirect_uri = 'http://localhost:5173/oauth/callback'
                         scope = (
                             'instagram_basic,'
                             'instagram_content_publish,'
-                            'instagram_manage_insights,'
                             'pages_show_list,'
-                            'pages_read_engagement,'
                             'catalog_management,'
+                            'commerce_management,'
                             'business_management'
                         )
                         auth_url = (
@@ -469,14 +623,14 @@ async def index(_p={'data': {'instance': Any}}):
                             raise Exception("record not found")
                         d   = dict(row.data or {})
                         cfg = dict(d.get('config', {}))
-                        app_id       = cfg.get('meta_app_id', '')
-                        app_secret   = cfg.get('meta_app_secret', '')
+                        app_id       = cfg.get('meta_app_id', '') or os.getenv('META_APP_ID', '')
+                        app_secret   = cfg.get('meta_app_secret', '') or os.getenv('META_APP_SECRET', '')
                         redirect_uri = body.get('redirect_uri', cfg.get('oauth_redirect_uri', ''))
                         code         = body.get('code', '')
                         if not code:
                             raise Exception("authorization code is required")
                         if not app_id or not app_secret:
-                            raise Exception("meta_app_id and meta_app_secret not configured")
+                            raise Exception("META_APP_ID and META_APP_SECRET not configured. Set environment variables.")
 
                         # 1. exchange code → short-lived token
                         async with httpx.AsyncClient() as client:
@@ -813,7 +967,7 @@ async def index(_p={'data': {'instance': Any}}):
                                     params={"access_token": token}
                                 )
                                 granted = [p['permission'] for p in rp.json().get('data', []) if p.get('status') == 'granted']
-                                required = ['instagram_basic', 'pages_show_list', 'catalog_management', 'business_management']
+                                required = ['instagram_basic', 'instagram_content_publish', 'pages_show_list', 'catalog_management', 'commerce_management', 'business_management']
                                 permissions_detail = {
                                     "granted":  granted,
                                     "required": required,
@@ -1267,12 +1421,29 @@ async def index(_p={'data': {'instance': Any}}):
                         await db.commit()
                         return JSONResponse(content={"success": True, "data": {}}, status_code=200)
 
+                    case 'token_refresh':
+                        refresh_token = body.get('refresh_token', '')
+                        if not refresh_token:
+                            raise Exception("refresh_token is required")
+                        try:
+                            payload = JWTHandler.verify_token(refresh_token)
+                        except Exception:
+                            raise Exception("invalid or expired refresh token")
+                        if payload.get('token_type') != 'refresh':
+                            raise Exception("not a refresh token")
+                        user_id  = payload.get('sub', '')
+                        new_token = _create_access_token(user_id, payload.get('name', ''))
+                        return JSONResponse(content={"success": True, "data": {
+                            "access_token": new_token,
+                            "token_type":   "Bearer"
+                        }}, status_code=200)
+
                     case _:
                         raise Exception(f"unknown typ={typ}")
-
+        
         except Exception as e:
-            print(f"[705/i] ERROR: {e}")
-            return _err("Err [i]", e.args)
+            _log.error(f"[705/i] typ={request.query_params.get('typ')} error={e}")
+            return _err("Err [i]", str(e))
 
 
     # ── i_init ────────────────────────────────────────────────────────────
@@ -1369,6 +1540,8 @@ async def index(_p={'data': {'instance': Any}}):
             # profile
             'get_profile':  _obj(id={"type": "string"}, user_id={"type": "string"}),
             'save_profile': _obj(id={"type": "string"}, user_id={"type": "string"}, profile={"type": "object"}),
+            # token
+            'token_refresh': _obj(refresh_token={"type": "string"}),
         }
 
         if typ not in _schemas:
